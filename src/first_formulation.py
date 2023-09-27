@@ -349,4 +349,4 @@ def running_all_instance_with_chosen_capacity():
 
 if __name__ == "__main__":
     running_all_instance_choose_capacity()
-    running_all_instance_with_chosen_capacity()
+    # running_all_instance_with_chosen_capacity()
