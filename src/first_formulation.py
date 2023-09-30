@@ -8,13 +8,13 @@ from docplex.mp.model import Model
 from read_file import dataCS
 
 from pathlib import Path
+import os
 
 try:
-    import mpi4py
     from mpi4py.futures import MPIPoolExecutor
-    MPI_BOOL = False
+    MPI_BOOL = True
 except:
-    print("mp4py not running")
+    print("mpi4py not running")
     MPI_BOOL = False
 
 INSTANCES = [f"F{i}.DAT" for i in range(1, 2)] + [f"G{i}.DAT" for i in range(1, 2)]
@@ -278,13 +278,8 @@ def choose_capacity(
 
 
 def print_info(data: dataCS, status: str) -> None:
-    if not  MPI_BOOL:
         print(
-            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status}"
-        )
-    else:
-        print(
-            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {mpi4py.MPI.Get_processor_name()}"
+            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {os.getppid()}"
         )
 
 
