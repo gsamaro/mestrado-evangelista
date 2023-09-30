@@ -15,6 +15,8 @@ except:
     print("mp4py not running")
 
 INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1, 76)]
+MAQUINAS = [2, 4, 8]
+
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
 OTIMIZADOS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados_f1.xlsx")
 
@@ -310,7 +312,7 @@ def running_all_instance_choose_capacity(mpi: bool = True) -> pd.DataFrame:
 
     if not mpi:
         for dataset in INSTANCES:
-            for nmaq in [2, 4, 8]:
+            for nmaq in MAQUINAS:
                 best_result = choose_capacity(dataset, nmaquinas=nmaq)
 
                 if best_result:
@@ -319,7 +321,7 @@ def running_all_instance_choose_capacity(mpi: bool = True) -> pd.DataFrame:
         with MPIPoolExecutor() as executor:
             futures = executor.starmap(
                 choose_capacity,
-                ((dataset, nmaq) for dataset in INSTANCES for nmaq in [2, 4, 8]),
+                ((dataset, nmaq) for dataset in INSTANCES for nmaq in MAQUINAS),
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
@@ -343,7 +345,7 @@ def running_all_instance_with_chosen_capacity(mpi: bool = True):
 
     if not mpi:
         for dataset in INSTANCES:
-            for nmaq in [2, 4, 8]:
+            for nmaq in MAQUINAS:
                 if caps.get((dataset, nmaq), None) == None:
                     print(f"Instance = {dataset} nmaquinas = {nmaq} not found")
                     continue
@@ -363,7 +365,7 @@ def running_all_instance_with_chosen_capacity(mpi: bool = True):
                 (
                     (dataset, caps.get((dataset, nmaq), None)["capacity"], nmaq)
                     for dataset in INSTANCES
-                    for nmaq in [2, 4, 8]
+                    for nmaq in MAQUINAS
                 ),
             )
             final_results.append(futures)
