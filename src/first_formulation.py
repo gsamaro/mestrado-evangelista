@@ -18,8 +18,8 @@ except:
     print("mpi4py not running")
     MPI_BOOL = False
 
-INSTANCES = [f"F{i}.DAT" for i in range(1, 2)] #+ [f"G{i}.DAT" for i in range(1, 2)]
-MAQUINAS = [2, 4]
+INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1, 76)]
+MAQUINAS = [2, 4, 8]
 
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
 OTIMIZADOS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados_f1.xlsx")
