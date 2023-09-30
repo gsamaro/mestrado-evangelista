@@ -11,7 +11,7 @@ from pathlib import Path
 
 from mpi4py.futures import MPIPoolExecutor
 
-INSTANCES = [f"F{i}" for i in range(1, 71)] + [f"G{i}" for i in range(1, 76)]
+INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1, 76)]
 
 def create_variables(mdl: Model, data: dataCS) -> Model:
     mdl.y = mdl.binary_var_dict(
