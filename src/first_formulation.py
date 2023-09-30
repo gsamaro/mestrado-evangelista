@@ -18,6 +18,7 @@ INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1,
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
 OTIMIZADOS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados_f1.xlsx")
 
+
 def create_variables(mdl: Model, data: dataCS) -> Model:
     mdl.y = mdl.binary_var_dict(
         (
@@ -303,13 +304,13 @@ def solve_optimized_model(
     return kpis
 
 
-def running_all_instance_choose_capacity(mpi:bool = True) -> pd.DataFrame:
+def running_all_instance_choose_capacity(mpi: bool = True) -> pd.DataFrame:
     # Executando e coletando os resultados
     final_results = []
 
     if not mpi:
-        for dataset in INSTANCES:        
-            for nmaq in [2, 4, 8]:      
+        for dataset in INSTANCES:
+            for nmaq in [2, 4, 8]:
                 best_result = choose_capacity(dataset, nmaquinas=nmaq)
 
                 if best_result:
@@ -318,11 +319,7 @@ def running_all_instance_choose_capacity(mpi:bool = True) -> pd.DataFrame:
         with MPIPoolExecutor() as executor:
             futures = executor.starmap(
                 choose_capacity,
-                (
-                    (dataset, nmaq)
-                    for dataset in INSTANCES
-                    for nmaq in [2, 4, 8]
-                )
+                ((dataset, nmaq) for dataset in INSTANCES for nmaq in [2, 4, 8]),
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
@@ -336,16 +333,17 @@ def running_all_instance_choose_capacity(mpi:bool = True) -> pd.DataFrame:
     return df_results_optimized
 
 
-def running_all_instance_with_chosen_capacity(mpi:bool = True):
+def running_all_instance_with_chosen_capacity(mpi: bool = True):
     final_results = []
 
     pdf_capacidades = pd.read_excel(CAPACIDADES_PATH, engine="openpyxl")
-    caps = pd.pivot_table(pdf_capacidades, index=["Instance", "nmaquinas"], aggfunc={"capacity": "mean"}).T.to_dict()
+    caps = pd.pivot_table(
+        pdf_capacidades, index=["Instance", "nmaquinas"], aggfunc={"capacity": "mean"}
+    ).T.to_dict()
 
     if not mpi:
         for dataset in INSTANCES:
-            for nmaq in [2, 4, 8]:                
-
+            for nmaq in [2, 4, 8]:
                 if caps.get((dataset, nmaq), None) == None:
                     print(f"Instance = {dataset} nmaquinas = {nmaq} not found")
                     continue
@@ -366,11 +364,10 @@ def running_all_instance_with_chosen_capacity(mpi:bool = True):
                     (dataset, caps.get((dataset, nmaq), None)["capacity"], nmaq)
                     for dataset in INSTANCES
                     for nmaq in [2, 4, 8]
-                )
+                ),
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-
 
     df_results_optimized = pd.DataFrame(final_results)
     df_results_optimized.to_excel(OTIMIZADOS_PATH, index=False)
