@@ -9,9 +9,14 @@ from read_file import dataCS
 
 from pathlib import Path
 
-from mpi4py.futures import MPIPoolExecutor
+try:
+    from mpi4py.futures import MPIPoolExecutor
+except:
+    print("mp4py not running")
 
 INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1, 76)]
+CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
+OTIMIZADOS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados_f1.xlsx")
 
 def create_variables(mdl: Model, data: dataCS) -> Model:
     mdl.y = mdl.binary_var_dict(
@@ -326,28 +331,26 @@ def running_all_instance_choose_capacity(mpi:bool = True) -> pd.DataFrame:
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
     else:
         df_results_optimized = pd.DataFrame(final_results)
-    df_results_optimized.to_excel(Path.resolve(Path.cwd() / "resultados" / "capacidades.xlsx"), index=False)
+    df_results_optimized.to_excel(CAPACIDADES_PATH, index=False)
     print("Processamento de capacidades concluído.")
     return df_results_optimized
 
 
-def running_all_instance_with_chosen_capacity():
+def running_all_instance_with_chosen_capacity(mpi:bool = True):
     final_results = []
 
-    pdf_capacidades = pd.read_excel(Path.resolve(Path.cwd() / "resultados" / "capacidades.xlsx"), engine="openpyxl")
+    pdf_capacidades = pd.read_excel(CAPACIDADES_PATH, engine="openpyxl")
+    caps = pd.pivot_table(pdf_capacidades, index=["Instance", "nmaquinas"], aggfunc={"capacity": "mean"}).T.to_dict()
 
-    for letter in ["G"]:  ## ["F", "G"]
-        for i in [4]:
-            for nmaq in [8]:
-                dataset = f"{letter}{i}.DAT"
+    if not mpi:
+        for dataset in INSTANCES:
+            for nmaq in [2, 4, 8]:                
 
-                cap = pdf_capacidades.query(
-                    f"Instance == '{dataset}' and nmaquinas == {nmaq}"
-                )["capacity"].values
-
-                if len(cap) == 0:
+                if caps.get((dataset, nmaq), None) == None:
                     print(f"Instance = {dataset} nmaquinas = {nmaq} not found")
                     continue
+                else:
+                    cap = caps.get((dataset, nmaq), None)["capacity"]
 
                 best_result = solve_optimized_model(
                     dataset, capacity=cap[0], nmaquinas=nmaq, timelimit=30
@@ -355,12 +358,25 @@ def running_all_instance_with_chosen_capacity():
 
                 if best_result:
                     final_results.append(best_result)
+    else:
+        with MPIPoolExecutor() as executor:
+            futures = executor.starmap(
+                solve_optimized_model,
+                (
+                    (dataset, caps.get((dataset, nmaq), None)["capacity"], nmaq)
+                    for dataset in INSTANCES
+                    for nmaq in [2, 4, 8]
+                )
+            )
+            final_results.append(futures)
+            executor.shutdown(wait=True)
+
 
     df_results_optimized = pd.DataFrame(final_results)
-    df_results_optimized.to_excel(Path.resolve(Path.cwd() / "resultados" / "otimizados.xlsx"), index=False)
+    df_results_optimized.to_excel(OTIMIZADOS_PATH, index=False)
     pass
 
 
 if __name__ == "__main__":
     running_all_instance_choose_capacity(mpi=True)
-    # running_all_instance_with_chosen_capacity()
+    running_all_instance_with_chosen_capacity(mpi=True)
