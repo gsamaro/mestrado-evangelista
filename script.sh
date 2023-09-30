@@ -11,4 +11,4 @@ module load openmpi/4.1.1-intel-2021.3.0
 source py38/bin/activate
 
 cd $PBS_O_WORKDIR
-mpirun -np 4 python -m mpi4py.futures src/first_formulation.py
+mpirun -np 4 python -m mpi4py.futures mestrado-evangelista/src/first_formulation.py
