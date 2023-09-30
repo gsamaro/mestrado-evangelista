@@ -1,6 +1,6 @@
 #PBS -N mestrado_first_formulation
-#PBS -q parexp
-#PBS -l nodes=22:ppn=48
+#PBS -q paralela
+#PBS -l nodes=8:ppn=128
 #PBS -e erros
 #PBS -o saida
 #PBS -m abe
@@ -11,4 +11,4 @@ module load openmpi/4.1.1-intel-2021.3.0
 source py38/bin/activate
 
 cd $PBS_O_WORKDIR
-mpirun -np 1056 python -m mpi4py.futures src/first_formulation.py
+mpirun -np 1024 python -m mpi4py.futures src/first_formulation.py
