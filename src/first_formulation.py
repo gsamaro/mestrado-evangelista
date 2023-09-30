@@ -330,7 +330,7 @@ def running_all_instance_choose_capacity() -> pd.DataFrame:
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-
+    print(type(final_results[0]))
     if isinstance(final_results[0], list) or isinstance(final_results[0], Future):
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
     else:
