@@ -13,6 +13,7 @@ import types
 
 try:
     from mpi4py.futures import MPIPoolExecutor
+
     MPI_BOOL = True
 except:
     print("mpi4py not running")
@@ -279,9 +280,9 @@ def choose_capacity(
 
 
 def print_info(data: dataCS, status: str) -> None:
-        print(
-            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {os.getppid()}"
-        )
+    print(
+        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {os.getppid()}"
+    )
 
 
 def solve_optimized_model(
@@ -331,7 +332,9 @@ def running_all_instance_choose_capacity() -> pd.DataFrame:
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    if isinstance(final_results[0], list) or isinstance(final_results[0], types.GeneratorType):
+    if isinstance(final_results[0], list) or isinstance(
+        final_results[0], types.GeneratorType
+    ):
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
     else:
         df_results_optimized = pd.DataFrame(final_results)
@@ -358,7 +361,9 @@ def running_all_instance_with_chosen_capacity():
                     cap = caps.get((dataset, nmaq), None)["capacity"]
 
                 best_result = solve_optimized_model(
-                    dataset, capacity=cap[0], nmaquinas=nmaq,
+                    dataset,
+                    capacity=cap[0],
+                    nmaquinas=nmaq,
                 )
 
                 if best_result:
@@ -378,9 +383,8 @@ def running_all_instance_with_chosen_capacity():
 
     df_results_optimized = pd.DataFrame(final_results)
     df_results_optimized.to_excel(OTIMIZADOS_PATH, index=False)
-    pass
 
 
 if __name__ == "__main__":
     running_all_instance_choose_capacity()
-    # running_all_instance_with_chosen_capacity()
+    running_all_instance_with_chosen_capacity()
