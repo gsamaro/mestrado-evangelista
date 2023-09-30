@@ -11,14 +11,15 @@ from pathlib import Path
 import os
 
 try:
+    from concurrent.futures import Future
     from mpi4py.futures import MPIPoolExecutor
     MPI_BOOL = True
 except:
     print("mpi4py not running")
     MPI_BOOL = False
 
-INSTANCES = [f"F{i}.DAT" for i in range(1, 2)] + [f"G{i}.DAT" for i in range(1, 2)]
-MAQUINAS = [2, 4, 8]
+INSTANCES = [f"F{i}.DAT" for i in range(1, 2)] #+ [f"G{i}.DAT" for i in range(1, 2)]
+MAQUINAS = [2, 4]
 
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
 OTIMIZADOS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados_f1.xlsx")
@@ -330,7 +331,7 @@ def running_all_instance_choose_capacity() -> pd.DataFrame:
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    if isinstance(final_results[0], list):
+    if isinstance(final_results[0], list) or isinstance(final_results[0], Future):
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
     else:
         df_results_optimized = pd.DataFrame(final_results)
