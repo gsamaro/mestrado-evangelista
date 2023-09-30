@@ -9,9 +9,9 @@ from read_file import dataCS
 
 from pathlib import Path
 import os
+import types
 
 try:
-    from concurrent.futures import Future
     from mpi4py.futures import MPIPoolExecutor
     MPI_BOOL = True
 except:
@@ -330,8 +330,8 @@ def running_all_instance_choose_capacity() -> pd.DataFrame:
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-    print(type(final_results[0]))
-    if isinstance(final_results[0], list) or isinstance(final_results[0], Future):
+
+    if isinstance(final_results[0], list) or isinstance(final_results[0], types.GeneratorType):
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
     else:
         df_results_optimized = pd.DataFrame(final_results)
