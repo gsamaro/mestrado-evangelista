@@ -226,6 +226,7 @@ def closest_to_75_percent(results_per_instance: List[Dict[str, any]]) -> Dict[st
 def build_model(data: dataCS, capacity: float) -> Model:
     data.cap[0] = capacity
     mdl = Model(name="mtd")
+    mdl.context.cplex_parameters.threads = 1
     mdl = create_variables(mdl, data)
     mdl = define_obj_function(mdl, data)
     mdl = constraint_demanda_satisfeita(mdl, data)
