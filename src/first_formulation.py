@@ -10,11 +10,14 @@ from read_file import dataCS
 from pathlib import Path
 
 try:
+    import mpi4py
     from mpi4py.futures import MPIPoolExecutor
+    MPI_BOOL = False
 except:
     print("mp4py not running")
+    MPI_BOOL = False
 
-INSTANCES = [f"F{i}.DAT" for i in range(1, 71)] + [f"G{i}.DAT" for i in range(1, 76)]
+INSTANCES = [f"F{i}.DAT" for i in range(1, 2)] + [f"G{i}.DAT" for i in range(1, 2)]
 MAQUINAS = [2, 4, 8]
 
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades_f1.xlsx")
@@ -244,7 +247,7 @@ def build_model(data: dataCS, capacity: float) -> Model:
 
 
 def choose_capacity(
-    dataset: str, nmaquinas: int = 2, timelimit: int = 20, get_closest: bool = True
+    dataset: str, nmaquinas: int = 2, timelimit: int = 10, get_closest: bool = True
 ) -> Dict[str, any]:
     data = dataCS(dataset, r=nmaquinas)
     original_capacity = data.cap[0] / data.r
@@ -275,9 +278,14 @@ def choose_capacity(
 
 
 def print_info(data: dataCS, status: str) -> None:
-    print(
-        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status}"
-    )
+    if not  MPI_BOOL:
+        print(
+            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status}"
+        )
+    else:
+        print(
+            f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {mpi4py.MPI.Get_processor_name()}"
+        )
 
 
 def solve_optimized_model(
@@ -307,11 +315,11 @@ def solve_optimized_model(
     return kpis
 
 
-def running_all_instance_choose_capacity(mpi: bool = True) -> pd.DataFrame:
+def running_all_instance_choose_capacity() -> pd.DataFrame:
     # Executando e coletando os resultados
     final_results = []
 
-    if not mpi:
+    if not MPI_BOOL:
         for dataset in INSTANCES:
             for nmaq in MAQUINAS:
                 best_result = choose_capacity(dataset, nmaquinas=nmaq)
@@ -336,7 +344,7 @@ def running_all_instance_choose_capacity(mpi: bool = True) -> pd.DataFrame:
     return df_results_optimized
 
 
-def running_all_instance_with_chosen_capacity(mpi: bool = True):
+def running_all_instance_with_chosen_capacity():
     final_results = []
 
     pdf_capacidades = pd.read_excel(CAPACIDADES_PATH, engine="openpyxl")
@@ -344,7 +352,7 @@ def running_all_instance_with_chosen_capacity(mpi: bool = True):
         pdf_capacidades, index=["Instance", "nmaquinas"], aggfunc={"capacity": "mean"}
     ).T.to_dict()
 
-    if not mpi:
+    if not MPI_BOOL:
         for dataset in INSTANCES:
             for nmaq in MAQUINAS:
                 if caps.get((dataset, nmaq), None) == None:
@@ -354,7 +362,7 @@ def running_all_instance_with_chosen_capacity(mpi: bool = True):
                     cap = caps.get((dataset, nmaq), None)["capacity"]
 
                 best_result = solve_optimized_model(
-                    dataset, capacity=cap[0], nmaquinas=nmaq, timelimit=30
+                    dataset, capacity=cap[0], nmaquinas=nmaq,
                 )
 
                 if best_result:
@@ -378,5 +386,5 @@ def running_all_instance_with_chosen_capacity(mpi: bool = True):
 
 
 if __name__ == "__main__":
-    running_all_instance_choose_capacity(mpi=True)
-    running_all_instance_with_chosen_capacity(mpi=True)
+    running_all_instance_choose_capacity()
+    # running_all_instance_with_chosen_capacity()
