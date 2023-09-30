@@ -9,6 +9,9 @@ from read_file import dataCS
 
 from pathlib import Path
 
+from mpi4py.futures import MPIPoolExecutor
+
+INSTANCES = [f"F{i}" for i in range(1, 71)] + [f"G{i}" for i in range(1, 76)]
 
 def create_variables(mdl: Model, data: dataCS) -> Model:
     mdl.y = mdl.binary_var_dict(
@@ -295,18 +298,29 @@ def solve_optimized_model(
     return kpis
 
 
-def running_all_instance_choose_capacity() -> pd.DataFrame:
+def running_all_instance_choose_capacity(mpi:bool = True) -> pd.DataFrame:
     # Executando e coletando os resultados
     final_results = []
 
-    for letter in ["G"]:  ## ["F", "G"]
-        for i in [4]:
-            for nmaq in [8]:  ## [2, 4, 8]
-                dataset = f"{letter}{i}.DAT"
+    if not mpi:
+        for dataset in INSTANCES:        
+            for nmaq in [2, 4, 8]:      
                 best_result = choose_capacity(dataset, nmaquinas=nmaq)
 
                 if best_result:
                     final_results.append(best_result)
+    else:
+        with MPIPoolExecutor() as executor:
+            futures = executor.starmap(
+                choose_capacity,
+                (
+                    (dataset, nmaq)
+                    for dataset in INSTANCES
+                    for nmaq in [2, 4, 8]
+                )
+            )
+            final_results.append(futures)
+            executor.shutdown(wait=True)
 
     if isinstance(final_results[0], list):
         df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
@@ -348,5 +362,5 @@ def running_all_instance_with_chosen_capacity():
 
 
 if __name__ == "__main__":
-    running_all_instance_choose_capacity()
-    running_all_instance_with_chosen_capacity()
+    running_all_instance_choose_capacity(mpi=True)
+    # running_all_instance_with_chosen_capacity()
