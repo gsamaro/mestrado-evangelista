@@ -8,11 +8,11 @@ from docplex.mp.model import Model
 from read_file import dataCS
 
 from pathlib import Path
-import os
 import types
 
 try:
     from mpi4py.futures import MPIPoolExecutor
+    from mpi4py import MPI
 
     MPI_BOOL = True
 except:
@@ -283,8 +283,10 @@ def choose_capacity(
 
 
 def print_info(data: dataCS, status: str) -> None:
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank() 
     print(
-        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {os.getppid()}"
+        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {rank}"
     )
 
 
