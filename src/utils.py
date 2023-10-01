@@ -62,9 +62,11 @@ def choose_capacity(
     for cap in np.linspace(
         original_capacity, original_capacity * 2, num=5, endpoint=True
     ):
+        print_info(data, "building")
         mdl, data = build_model(data, np.ceil(cap))
         mdl.parameters.timelimit = constants.FAST_TIMELIMIT
         result = mdl.solve()
+        print_info(data, "solver finished")
 
         if result == None:
             print_info(data, "infactível")
@@ -101,6 +103,7 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
                     final_results.append(best_result)
     else:
         with MPIPoolExecutor() as executor:
+            print("Running MPI")
             futures = executor.starmap(
                 choose_capacity,
                 (
