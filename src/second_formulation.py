@@ -1,13 +1,6 @@
-from itertools import chain
-from typing import Dict, List
-
-import numpy as np
-import pandas as pd
 from docplex.mp.model import Model
 
 from read_file import dataCS
-
-from pathlib import Path
 
 
 def create_variables(mdl: Model, data: dataCS) -> Model:
@@ -235,25 +228,6 @@ def total_w(mdl, data):
     )
 
 
-def add_new_kpi(kpis: Dict[str, any], result, data: dataCS) -> dict:
-    kpis["Instance"] = data.instance
-    kpis["Best Bound"] = result.solve_details.best_bound
-    kpis["Gap"] = result.solve_details.gap
-    kpis["Nodes Processed"] = result.solve_details.gap
-    kpis["Tempo de Solução"] = result.solve_details.time
-    kpis["capacity"] = data.cap[0]
-    kpis["utilization_capacity"] = (
-        100 * kpis.get("used_capacity", 0) / (data.cap[0] * data.r * data.nperiodos)
-    )
-    kpis["nmaquinas"] = data.r
-    return kpis
-
-
-def closest_to_75_percent(results_per_instance: List[Dict[str, any]]) -> Dict[str, any]:
-    """Dado uma lista de resultados para uma instância, retorne aquele mais próximo de 75% de utilização da capacidade."""
-    return min(results_per_instance, key=lambda x: abs(x["utilization_capacity"] - 75))
-
-
 def build_model(data: dataCS, capacity: float) -> (Model, dataCS):
     data.cap[0] = capacity
     mdl = Model(name="mtd")
@@ -269,125 +243,3 @@ def build_model(data: dataCS, capacity: float) -> (Model, dataCS):
     mdl.add_kpi(total_w(mdl, data), "total_w")
     mdl.add_kpi(total_z(mdl, data), "total_z")
     return mdl, data
-
-
-def choose_capacity(
-    dataset: str, nmaquinas: int = 2, timelimit: int = 3, get_closest: bool = True
-) -> Dict[str, any]:
-    data = dataCS(dataset, r=nmaquinas)
-    original_capacity = data.cap[0] / data.r
-    instance_results = []
-
-    for cap in np.linspace(
-        original_capacity, original_capacity * 2, num=5, endpoint=True
-    ):
-        data = dataCS(dataset, r=nmaquinas)
-        mdl, data = build_model(data, np.ceil(cap))
-        mdl.parameters.timelimit = timelimit
-        result = mdl.solve()
-
-        if result == None:
-            print_info(data, "infactível")
-            continue
-
-        kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
-        kpis = add_new_kpi(kpis, result, data)
-
-        assert kpis["utilization_capacity"] <= 100, "Capacidade > 100%"
-
-        instance_results.append(kpis)
-        print_info(data, "concluído")
-    if get_closest:
-        return closest_to_75_percent(instance_results)
-    else:
-        return instance_results
-
-
-def print_info(data: dataCS, status: str) -> None:
-    print(
-        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status}"
-    )
-
-
-def solve_optimized_model(
-    dataset: str, capacity: float, nmaquinas: int = 8, timelimit: int = 10
-) -> Dict[str, any]:
-    data = dataCS(dataset, r=nmaquinas)
-    mdl, data = build_model(data, capacity)
-    mdl.parameters.timelimit = timelimit
-    result = mdl.solve()
-
-    if result == None:
-        print_info(data, "infactível")
-        return None
-
-    kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
-    kpis = add_new_kpi(kpis, result, data)
-
-    # Cálculo da relaxação linear
-    relaxed_model = mdl.clone()
-    status = relaxed_model.solve(url=None, key=None, log_output=False)
-
-    relaxed_objective_value = relaxed_model.objective_value
-    kpis["Relaxed Objective Value"] = relaxed_objective_value
-
-    print_info(data, "concluído")
-
-    return kpis
-
-
-def running_all_instance_choose_capacity() -> pd.DataFrame:
-    # Executando e coletando os resultados
-    final_results = []
-
-    for letter in ["F"]:  ## ["F", "G"]
-        for i in range(1, 6):
-            for nmaq in [2, 4]:  ## [2, 4, 8]
-                dataset = f"{letter}{i}.DAT"
-                best_result = choose_capacity(dataset, nmaquinas=nmaq)
-
-                if best_result:
-                    final_results.append(best_result)
-
-    if isinstance(final_results[0], list):
-        df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
-    else:
-        df_results_optimized = pd.DataFrame(final_results)
-    df_results_optimized.to_excel(Path.resolve(Path.cwd() / "resultados" / "capacidadesfç2.xlsx"), index=False)
-    print("Processamento de capacidades concluído.")
-    return df_results_optimized
-
-
-def running_all_instance_with_chosen_capacity():
-    final_results = []
-
-    pdf_capacidades = pd.read_excel(Path.resolve(Path.cwd() / "resultados" / "capacidadesfç2.xlsx"), engine="openpyxl")
-
-    for letter in ["F", "G"]:  ## ["F", "G"]
-        for i in range(1, 4):
-            for nmaq in [2, 4]:
-                dataset = f"{letter}{i}.DAT"
-
-                cap = pdf_capacidades.query(
-                    f"Instance == '{dataset}' and nmaquinas == {nmaq}"
-                )["capacity"].values
-
-                if len(cap) == 0:
-                    print(f"Instance = {dataset} nmaquinas = {nmaq} not found")
-                    continue
-
-                best_result = solve_optimized_model(
-                    dataset, capacity=cap[0], nmaquinas=nmaq, timelimit=15
-                )
-
-                if best_result:
-                    final_results.append(best_result)
-
-    df_results_optimized = pd.DataFrame(final_results)
-    df_results_optimized.to_excel(Path.resolve(Path.cwd() / "resultados" / "otimizadosfç2.xlsx"), index=False)
-    pass
-
-
-if __name__ == "__main__":
-    running_all_instance_choose_capacity()
-    running_all_instance_with_chosen_capacity()
