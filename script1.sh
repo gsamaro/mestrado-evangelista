@@ -1,8 +1,8 @@
 #PBS -N mestrado_first_formulation
 #PBS -q paralela
 #PBS -l nodes=8:ppn=128
-#PBS -e erros
-#PBS -o saida
+#PBS -e outputs/erros1
+#PBS -o outputs/saidas1
 #PBS -m abe
 #PBS -M gabriel.amaro94@gmail.com
 
