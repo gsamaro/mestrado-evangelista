@@ -29,7 +29,7 @@ def print_info(data: dataCS, status: str) -> None:
     else:
         rank = None
     print(
-        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {rank} {os.environ.get('FORMULATION')}"
+        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {rank}"
     )
 
 
@@ -91,8 +91,6 @@ def choose_capacity(
 def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.DataFrame:
     # Executando e coletando os resultados
     final_results = []
-
-    os.environ["FORMULATION"] = env_formulation
 
     if not MPI_BOOL:
         for dataset in constants.INSTANCES:
@@ -160,7 +158,6 @@ def solve_optimized_model(
 def running_all_instance_with_chosen_capacity(
     build_model, path_to_save: str, env_formulation: str
 ):
-    os.environ["FORMULATION"] = env_formulation
 
     final_results = []
 
