@@ -101,11 +101,10 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
                     final_results.append(best_result)
     else:
         with MPIPoolExecutor() as executor:
-            print("Running MPI")
             futures = executor.starmap(
                 choose_capacity,
                 (
-                    (dataset, nmaq)
+                    (dataset, build_model, nmaq)
                     for dataset in constants.INSTANCES
                     for nmaq in constants.MAQUINAS
                 ),
@@ -117,7 +116,9 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
         if isinstance(final_results[0], list) or isinstance(
             final_results[0], types.GeneratorType
         ):
-            df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
+            df_results_optimized = pd.DataFrame(
+                list(chain.from_iterable(final_results))
+            )
         else:
             df_results_optimized = pd.DataFrame(final_results)
         df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
@@ -158,7 +159,6 @@ def solve_optimized_model(
 def running_all_instance_with_chosen_capacity(
     build_model, path_to_save: str, env_formulation: str
 ):
-
     final_results = []
 
     complete_path_to_save = Path.resolve(Path.cwd() / "resultados" / path_to_save)
