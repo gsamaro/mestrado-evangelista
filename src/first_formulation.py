@@ -277,14 +277,17 @@ def choose_capacity(
         if len(instance_results) > 0:
             return closest_to_75_percent(instance_results)
         else:
-            return [None]
+            return None
     else:
         return instance_results
 
 
 def print_info(data: dataCS, status: str) -> None:
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank() 
+    if MPI_BOOL:
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank() 
+    else: 
+        rank = None
     print(
         f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {rank}"
     )
