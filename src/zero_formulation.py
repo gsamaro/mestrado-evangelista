@@ -147,8 +147,7 @@ def add_new_kpi(kpis: Dict[str, any], result, data: dataCS) -> dict:
     return kpis
 
 
-def build_model(data: dataCS, capacity: float) -> Model:
-    print("build model classical formulation")
+def build_model(data: dataCS, capacity: float) -> Model:    
     data.cap[0] = capacity
     mdl = Model(name="mtd")
     mdl = create_variables(mdl, data)
