@@ -274,7 +274,10 @@ def choose_capacity(
         instance_results.append(kpis)
         print_info(data, "concluído")
     if get_closest:
-        return closest_to_75_percent(instance_results)
+        if len(instance_results) > 0:
+            return closest_to_75_percent(instance_results)
+        else:
+            return [None]
     else:
         return instance_results
 
