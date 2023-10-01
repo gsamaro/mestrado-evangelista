@@ -112,15 +112,19 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    if isinstance(final_results[0], list) or isinstance(
-        final_results[0], types.GeneratorType
-    ):
-        df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
+    if len(final_results) > 0:
+        if isinstance(final_results[0], list) or isinstance(
+            final_results[0], types.GeneratorType
+        ):
+            df_results_optimized = pd.DataFrame(list(chain.from_iterable(final_results)))
+        else:
+            df_results_optimized = pd.DataFrame(final_results)
+        df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
+        print("Processamento de capacidades concluído.")
+        return df_results_optimized
     else:
-        df_results_optimized = pd.DataFrame(final_results)
-    df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
-    print("Processamento de capacidades concluído.")
-    return df_results_optimized
+        print("Final results vazio.")
+        return None
 
 
 def solve_optimized_model(

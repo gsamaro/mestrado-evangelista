@@ -1,6 +1,6 @@
 #PBS -N main
 #PBS -q parexp
-#PBS -l nodes=22:ppn=48
+#PBS -l nodes=3:ppn=48
 #PBS -e outputs/erros1
 #PBS -o outputs/saidas1
 #PBS -m abe
