@@ -1,8 +1,8 @@
 #PBS -N mestrado_zero_formulation
 #PBS -q parexp
 #PBS -l nodes=22:ppn=48
-#PBS -e erros
-#PBS -o saida
+#PBS -e outputs/erros0
+#PBS -o outputs/saidas0
 #PBS -m abe
 #PBS -M gabriel.amaro94@gmail.com
 
