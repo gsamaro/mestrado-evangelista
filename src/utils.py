@@ -111,16 +111,18 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
+    
+    filtered_final_results = [f for f in final_results if f is not None]
 
-    if len(final_results) > 0:
-        if isinstance(final_results[0], list) or isinstance(
-            final_results[0], types.GeneratorType
+    if len(filtered_final_results) > 0:
+        if isinstance(filtered_final_results[0], list) or isinstance(
+            filtered_final_results[0], types.GeneratorType
         ):
             df_results_optimized = pd.DataFrame(
-                list(chain.from_iterable(final_results))
+                list(chain.from_iterable(filtered_final_results))
             )
         else:
-            df_results_optimized = pd.DataFrame(final_results)
+            df_results_optimized = pd.DataFrame(filtered_final_results)
         df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
         print("Processamento de capacidades concluído.")
         return df_results_optimized
@@ -194,7 +196,7 @@ def running_all_instance_with_chosen_capacity(
                     (
                         dataset,
                         build_model,
-                        caps.get((dataset, nmaq), None)["capacity"],
+                        caps.get((dataset, nmaq), None).get("capacity", 0),
                         nmaq,
                     )
                     for dataset in constants.INSTANCES
@@ -204,5 +206,7 @@ def running_all_instance_with_chosen_capacity(
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    df_results_optimized = pd.DataFrame(final_results)
+    filtered_final_results = [f for f in final_results if f is not None]
+
+    df_results_optimized = pd.DataFrame(filtered_final_results)
     df_results_optimized.to_excel(complete_path_to_save, index=False)
