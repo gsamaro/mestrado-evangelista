@@ -54,7 +54,7 @@ def closest_to_75_percent(results_per_instance: List[Dict[str, any]]) -> Dict[st
 
 def choose_capacity(
     dataset: str, build_model, nmaquinas: int = 2, get_closest: bool = True
-) -> Dict[str, any]:
+) -> pd.DataFrame:
     data = dataCS(dataset, r=nmaquinas)
     original_capacity = data.cap[0] / data.r
     instance_results = []
@@ -81,11 +81,11 @@ def choose_capacity(
         print_info(data, "concluído")
     if get_closest:
         if len(instance_results) > 0:
-            return closest_to_75_percent(instance_results)
+            return pd.DataFrame([closest_to_75_percent(instance_results)])
         else:
-            return None
+            return pd.DataFrame([])
     else:
-        return instance_results
+        return pd.DataFrame(instance_results)
 
 
 def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.DataFrame:
@@ -113,8 +113,7 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             executor.shutdown(wait=True)
     
     if len(final_results) > 0:        
-        filtered_final_results = list([list(f) for f in final_results if f is not None])        
-        df_results_optimized = pd.DataFrame(chain.from_iterable(filtered_final_results))
+        df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)                
         df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
         print("Processamento de capacidades concluído.")
         return df_results_optimized
@@ -125,7 +124,7 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
 
 def solve_optimized_model(
     dataset: str, build_model, capacity: float, nmaquinas: int = 8
-) -> Dict[str, any]:
+) -> pd.DataFrame:
     data = dataCS(dataset, r=nmaquinas)
     mdl, data = build_model(data, capacity)
     mdl.parameters.timelimit = constants.TIMELIMIT
@@ -133,7 +132,7 @@ def solve_optimized_model(
 
     if result == None:
         print_info(data, "infactível")
-        return None
+        return pd.DataFrame([])
 
     kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
     kpis = add_new_kpi(kpis, result, data)
@@ -147,7 +146,7 @@ def solve_optimized_model(
 
     print_info(data, "concluído")
 
-    return kpis
+    return pd.DataFrame([kpis])
 
 
 def running_all_instance_with_chosen_capacity(
@@ -197,10 +196,6 @@ def running_all_instance_with_chosen_capacity(
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-
-    if len(final_results) > 0:        
-        filtered_final_results = list([list(f) for f in final_results if f is not None])        
-        df_results_optimized = pd.DataFrame(chain.from_iterable(filtered_final_results))
-
-    df_results_optimized = pd.DataFrame(filtered_final_results)
+    
+    df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)                
     df_results_optimized.to_excel(complete_path_to_save, index=False)
