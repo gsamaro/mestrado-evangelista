@@ -60,7 +60,7 @@ def choose_capacity(
     instance_results = []
 
     for cap in np.linspace(
-        original_capacity, original_capacity * 2, num=5, endpoint=True
+        original_capacity, original_capacity * 2, num=constants.NUM_POINTS, endpoint=True
     ):
         print_info(data, "building")
         mdl, data = build_model(data, np.ceil(cap))
