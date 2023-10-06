@@ -60,7 +60,10 @@ def choose_capacity(
     instance_results = []
 
     for cap in np.linspace(
-        original_capacity, original_capacity * 2, num=constants.NUM_POINTS, endpoint=True
+        original_capacity,
+        original_capacity * 2,
+        num=constants.NUM_POINTS,
+        endpoint=True,
     ):
         print_info(data, "building")
         mdl, data = build_model(data, np.ceil(cap))
@@ -111,9 +114,9 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-    
-    if len(final_results) > 0:        
-        df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)                
+
+    if len(final_results) > 0:
+        df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)
         df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
         print("Processamento de capacidades concluído.")
         return df_results_optimized
@@ -123,10 +126,15 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
 
 
 def solve_optimized_model(
-    dataset: str, build_model, capacity: float, nmaquinas: int = 8
+    dataset: str, build_model, capacity: Dict, nmaquinas: int = 8
 ) -> pd.DataFrame:
+    if capacity == None:
+        return pd.DataFrame([])
+    elif not isinstance(capacity, dict):
+        print_info(data, "capacidade está com tipo errado")
+        raise TypeError("Capacidade está com tipo errado.")
     data = dataCS(dataset, r=nmaquinas)
-    mdl, data = build_model(data, capacity)
+    mdl, data = build_model(data, capacity.get("capacity", 0))
     mdl.parameters.timelimit = constants.TIMELIMIT
     result = mdl.solve()
 
@@ -168,7 +176,7 @@ def running_all_instance_with_chosen_capacity(
                     print(f"Instance = {dataset} nmaquinas = {nmaq} not found")
                     continue
                 else:
-                    cap = caps.get((dataset, nmaq), None)["capacity"]
+                    cap = caps.get((dataset, nmaq), None)
 
                 best_result = solve_optimized_model(
                     dataset,
@@ -187,7 +195,7 @@ def running_all_instance_with_chosen_capacity(
                     (
                         dataset,
                         build_model,
-                        caps.get((dataset, nmaq), None).get("capacity", 0),
+                        caps.get((dataset, nmaq), None),
                         nmaq,
                     )
                     for dataset in constants.INSTANCES
@@ -196,6 +204,6 @@ def running_all_instance_with_chosen_capacity(
             )
             final_results.append(futures)
             executor.shutdown(wait=True)
-    
-    df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)                
+
+    df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)
     df_results_optimized.to_excel(complete_path_to_save, index=False)
