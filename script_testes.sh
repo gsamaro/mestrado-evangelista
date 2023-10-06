@@ -1,4 +1,4 @@
-#PBS -N mestrado_first_formulation
+#PBS -N main
 #PBS -q testes
 #PBS -l nodes=1:ppn=4
 #PBS -e outputs/erros
@@ -11,4 +11,4 @@ module load openmpi/4.1.1-intel-2021.3.0
 source py38/bin/activate
 
 cd $PBS_O_WORKDIR
-mpirun -np 4 python -m mpi4py.futures src/first_formulation.py
+mpirun -np 4 python -m mpi4py.futures src/main.py
