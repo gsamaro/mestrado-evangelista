@@ -57,6 +57,9 @@ class LerDados:
             )
             self.d = np.append(demanda_sup, demanda_inf, axis=1).T
 
+    def __str__(self) -> str:
+        return f"{self.instance}_cap_{self.cap[0]}".replace(".dat", "")
+
     def _detect_delimiter(self) -> str:
         with open(self._instance) as f:
             line_splitted = re.split("\t", f.readline())
@@ -91,6 +94,9 @@ class dataCS(LerDados):
             self.original_cap = self.cap
             self.cap = self._lot_sizing_capacity()
 
+    def __str__(self) -> str:
+        return f"{super().__str__()}_nmaq_{self.r}"
+
     def _create_vc_cs(self):
         self.vc = np.zeros((self.nitems, self.nperiodos))
         self.cs = np.zeros((self.nitems, self.nperiodos, self.nperiodos))
@@ -118,11 +124,3 @@ class dataCS(LerDados):
 if __name__ == "__main__":
     ler = LerDados("F1.dat")
     data = dataCS("F1.dat", r=2)
-    print(f"nperiodos: {data.nperiodos}")
-    print("cs:")
-    for i in range(data.nitems):
-        for t in range(data.nperiodos):
-            for k in range(data.nperiodos):
-                print(f"{data.cs[i,t,k]:4.0f}", end=" ")
-            print()
-        print()
