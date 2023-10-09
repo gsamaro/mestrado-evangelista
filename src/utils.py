@@ -53,7 +53,7 @@ def closest_to_75_percent(results_per_instance: List[Dict[str, any]]) -> Dict[st
 
 
 def choose_capacity(
-    dataset: str, build_model, nmaquinas: int = 2, get_closest: bool = True
+    dataset: str, build_model, nmaquinas: int = 2, get_closest: bool = True, save_all_results: bool = True
 ) -> pd.DataFrame:
     data = dataCS(dataset, r=nmaquinas)
     original_capacity = data.cap[0] / data.r
@@ -64,12 +64,10 @@ def choose_capacity(
         original_capacity * 2,
         num=constants.NUM_POINTS,
         endpoint=True,
-    ):
-        print_info(data, "building")
+    ):        
         mdl, data = build_model(data, np.ceil(cap))
         mdl.parameters.timelimit = constants.FAST_TIMELIMIT
-        result = mdl.solve()
-        print_info(data, "solver finished")
+        result = mdl.solve()        
 
         if result == None:
             print_info(data, "infactível")
@@ -81,6 +79,8 @@ def choose_capacity(
         assert kpis["utilization_capacity"] <= 100, "Capacidade > 100%"
 
         instance_results.append(kpis)
+        if save_all_results:
+            pd.DataFrame(instance_results).to_excel(f"resultados/{str(data)}.xlsx", engine="openpyxl")
         print_info(data, "concluído")
     if get_closest:
         if len(instance_results) > 0:
@@ -100,7 +100,7 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             for nmaq in constants.MAQUINAS:
                 best_result = choose_capacity(dataset, build_model, nmaquinas=nmaq)
 
-                if best_result:
+                if isinstance(best_result, pd.DataFrame):
                     final_results.append(best_result)
     else:
         with MPIPoolExecutor() as executor:
