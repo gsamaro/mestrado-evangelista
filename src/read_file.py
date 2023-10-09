@@ -58,7 +58,7 @@ class LerDados:
             self.d = np.append(demanda_sup, demanda_inf, axis=1).T
 
     def __str__(self) -> str:
-        return f"{self.instance}_cap_{self.cap[0]}".replace(".dat", "")
+        return f"{self.instance}_cap_{self.cap[0]}".replace(".dat", "").replace(".DAT", "")
 
     def _detect_delimiter(self) -> str:
         with open(self._instance) as f:
