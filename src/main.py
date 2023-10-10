@@ -13,10 +13,10 @@ if __name__ == "__main__":
     running_all_instance_with_chosen_capacity(
         first_reformulation_build_model,
         path_to_save="otimizados1.xlsx",
-        env_formulation="1st ref",
+        env_formulation="1st_ref",
     )
     running_all_instance_with_chosen_capacity(
         second_reformulation_build_model,
         path_to_save="otimizados2.xlsx",
-        env_formulation="2nd ref",
+        env_formulation="2nd_ref",
     )
