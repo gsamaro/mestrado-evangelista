@@ -47,14 +47,22 @@ def add_new_kpi(kpis: Dict[str, any], result, data: dataCS) -> dict:
     return kpis
 
 
-def closest_to_75_percent(results_per_instance: List[Dict[str, any]]) -> Dict[str, any]:
-    """Dado uma lista de resultados para uma instância, retorne aquele mais próximo de 75% de utilização da capacidade."""
-    return min(results_per_instance, key=lambda x: abs(x["utilization_capacity"] - 75))
+def closest_to_IDEAL_CAPACITY_percent(
+    results_per_instance: List[Dict[str, any]]
+) -> Dict[str, any]:
+    """Dado uma lista de resultados para uma instância, retorne aquele mais próximo de IDEAL_CAPACITY de utilização da capacidade."""
+    return min(
+        results_per_instance,
+        key=lambda x: abs(x["utilization_capacity"] - constants.IDEAL_CAPACITY),
+    )
 
 
 def choose_capacity(
-    dataset: str, build_model, nmaquinas: int = 2, get_closest: bool = True, save_all_results: bool = True
-) -> pd.DataFrame:
+    dataset: str,
+    build_model,
+    nmaquinas: int = 2,
+    get_closest: bool = True,
+) -> None:
     data = dataCS(dataset, r=nmaquinas)
     original_capacity = data.cap[0] / data.r
     instance_results = []
@@ -64,10 +72,10 @@ def choose_capacity(
         original_capacity * 2,
         num=constants.NUM_POINTS,
         endpoint=True,
-    ):        
+    ):
         mdl, data = build_model(data, np.ceil(cap))
         mdl.parameters.timelimit = constants.FAST_TIMELIMIT
-        result = mdl.solve()        
+        result = mdl.solve()
 
         if result == None:
             print_info(data, "infactível")
@@ -79,19 +87,26 @@ def choose_capacity(
         assert kpis["utilization_capacity"] <= 100, "Capacidade > 100%"
 
         instance_results.append(kpis)
-        if save_all_results:
-            pd.DataFrame(instance_results).to_excel(f"resultados/{str(data)}.xlsx", engine="openpyxl")
         print_info(data, "concluído")
     if get_closest:
         if len(instance_results) > 0:
-            return pd.DataFrame([closest_to_75_percent(instance_results)])
-        else:
-            return pd.DataFrame([])
+            df_ideal_capacity = pd.DataFrame(
+                [closest_to_IDEAL_CAPACITY_percent(instance_results)]
+            )
+            data.cap[0] = df_ideal_capacity["capacity"]
+            df_ideal_capacity.to_excel(
+                f"{constants.RESULTADOS_INDIVIDUAIS_PATH}/{str(data)}.xlsx",
+                engine="openpyxl",
+            )
     else:
-        return pd.DataFrame(instance_results)
+        df_ideal_capacity = pd.DataFrame(instance_results)
+        df_ideal_capacity.to_excel(
+            f"{constants.RESULTADOS_INDIVIDUAIS_PATH}/{str(data)}.xlsx",
+            engine="openpyxl",
+        )
 
 
-def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.DataFrame:
+def running_all_instance_choose_capacity(build_model) -> None:
     # Executando e coletando os resultados
     final_results = []
 
@@ -115,14 +130,12 @@ def running_all_instance_choose_capacity(build_model, env_formulation) -> pd.Dat
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    if len(final_results) > 0:
-        df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)
-        df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
-        print("Processamento de capacidades concluído.")
-        return df_results_optimized
-    else:
-        print("Final results vazio.")
-        return None
+    list_files = []
+    for file in Path(constants.RESULTADOS_INDIVIDUAIS_PATH).glob("*"):
+        list_files.append(pd.read_excel(file))
+    df_results_optimized = pd.concat(list_files)
+    df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
+    print("Processamento de capacidades concluído.")
 
 
 def solve_optimized_model(
