@@ -8,7 +8,7 @@ from second_formulation import build_model as second_reformulation_build_model
 
 if __name__ == "__main__":
     running_all_instance_choose_capacity(
-        classical_formulation_build_model, env_formulation="Classical formulation"
+        classical_formulation_build_model
     )
     running_all_instance_with_chosen_capacity(
         first_reformulation_build_model,
