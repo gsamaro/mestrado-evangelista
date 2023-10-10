@@ -7,3 +7,8 @@ FAST_TIMELIMIT = 20
 TIMELIMIT = 3600
 
 CAPACIDADES_PATH = Path.resolve(Path.cwd() / "resultados" / "capacidades.xlsx")
+RESULTADOS_INDIVIDUAIS_PATH = Path.resolve(Path.cwd() / "resultados" / "individuais")
+OTIMIZADOS_INDIVIDUAIS_PATH = Path.resolve(Path.cwd() / "resultados" / "otimizados")
+FINAL_PATH = Path.resolve(Path.cwd() / "resultados")
+
+IDEAL_CAPACITY = 75
