@@ -130,19 +130,26 @@ def running_all_instance_choose_capacity(build_model) -> None:
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    list_files = []
-    for file in Path(constants.RESULTADOS_INDIVIDUAIS_PATH).glob("*"):
-        list_files.append(pd.read_excel(file))
-    df_results_optimized = pd.concat(list_files)
-    df_results_optimized.to_excel(constants.CAPACIDADES_PATH, index=False)
+    get_and_save_results(
+        path_to_read=constants.RESULTADOS_INDIVIDUAIS_PATH,
+        path_to_save=constants.CAPACIDADES_PATH,
+    )
     print("Processamento de capacidades concluído.")
 
 
+def get_and_save_results(path_to_read: str, path_to_save: str) -> None:
+    list_files = []
+    for file in Path(path_to_read).glob("*"):
+        list_files.append(pd.read_excel(file))
+    df_results_optimized = pd.concat(list_files)
+    df_results_optimized.to_excel(path_to_save, index=False)
+
+
 def solve_optimized_model(
-    dataset: str, build_model, capacity: Dict, nmaquinas: int = 8
-) -> pd.DataFrame:
+    dataset: str, build_model, capacity: Dict, env_formulation: int, nmaquinas: int = 8
+) -> None:
     if capacity == None:
-        return pd.DataFrame([])
+        return None
     elif not isinstance(capacity, dict):
         print_info(data, "capacidade está com tipo errado")
         raise TypeError("Capacidade está com tipo errado.")
@@ -153,7 +160,7 @@ def solve_optimized_model(
 
     if result == None:
         print_info(data, "infactível")
-        return pd.DataFrame([])
+        return None
 
     kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
     kpis = add_new_kpi(kpis, result, data)
@@ -165,17 +172,21 @@ def solve_optimized_model(
     relaxed_objective_value = relaxed_model.objective_value
     kpis["Relaxed Objective Value"] = relaxed_objective_value
 
-    print_info(data, "concluído")
+    suffix_path = str(data) + "_" + env_formulation
+    complete_path_to_save = Path.resolve(
+        constants.OTIMIZADOS_INDIVIDUAIS_PATH / suffix_path
+    )
 
-    return pd.DataFrame([kpis])
+    df_results_optimized = pd.DataFrame([kpis])
+    df_results_optimized.to_excel(f"{complete_path_to_save}.xlsx", index=False)
+
+    print_info(data, "concluído")
 
 
 def running_all_instance_with_chosen_capacity(
-    build_model, path_to_save: str, env_formulation: str
+    build_model, path_to_save: str, env_formulation: int
 ):
     final_results = []
-
-    complete_path_to_save = Path.resolve(Path.cwd() / "resultados" / path_to_save)
 
     pdf_capacidades = pd.read_excel(constants.CAPACIDADES_PATH, engine="openpyxl")
     caps = pd.pivot_table(
@@ -196,6 +207,7 @@ def running_all_instance_with_chosen_capacity(
                     build_model,
                     capacity=cap,
                     nmaquinas=nmaq,
+                    env_formulation=env_formulation,
                 )
 
                 if best_result:
@@ -209,6 +221,7 @@ def running_all_instance_with_chosen_capacity(
                         dataset,
                         build_model,
                         caps.get((dataset, nmaq), None),
+                        env_formulation,
                         nmaq,
                     )
                     for dataset in constants.INSTANCES
@@ -218,5 +231,8 @@ def running_all_instance_with_chosen_capacity(
             final_results.append(futures)
             executor.shutdown(wait=True)
 
-    df_results_optimized = pd.concat([list(f)[0] for f in final_results], axis=0)
-    df_results_optimized.to_excel(complete_path_to_save, index=False)
+    get_and_save_results(
+        path_to_read=constants.OTIMIZADOS_INDIVIDUAIS_PATH,
+        path_to_save=Path.resolve(constants.FINAL_PATH / path_to_save),
+    )
+    print(f"Concluído {env_formulation}")
