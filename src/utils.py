@@ -21,6 +21,8 @@ except:
 
 import constants
 
+import gc
+
 
 def print_info(data: dataCS, status: str) -> None:
     if MPI_BOOL:
@@ -104,6 +106,7 @@ def choose_capacity(
             f"{constants.RESULTADOS_INDIVIDUAIS_PATH}/{str(data)}.xlsx",
             engine="openpyxl",
         )
+    gc.collect()
 
 
 def running_all_instance_choose_capacity(build_model) -> None:
@@ -181,6 +184,7 @@ def solve_optimized_model(
     df_results_optimized.to_excel(f"{complete_path_to_save}.xlsx", index=False)
 
     print_info(data, "concluído")
+    gc.collect()
 
 
 def running_all_instance_with_chosen_capacity(
