@@ -1,6 +1,4 @@
 .vscode
 .pytest_cache
-resultados
 dist
 __pycache__
-outputs
