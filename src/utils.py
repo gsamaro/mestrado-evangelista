@@ -6,6 +6,7 @@ import types
 import numpy as np
 import pandas as pd
 
+import re
 
 from pathlib import Path
 from read_file import dataCS
@@ -140,10 +141,21 @@ def running_all_instance_choose_capacity(build_model) -> None:
     print("Processamento de capacidades concluído.")
 
 
-def get_and_save_results(path_to_read: str, path_to_save: str) -> None:
+def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
     list_files = []
-    for file in Path(path_to_read).glob("*"):
-        list_files.append(pd.read_excel(file))
+    for file in Path(path_to_read).glob("*"):        
+        target_formulation = re.search("\d",path_to_save.name)
+        current_formulation_file = re.search("\d", file.name.split("_")[5])
+        if target_formulation == None or re.search("classical", path_to_save.name) != None:
+            target_formulation = "classical"        
+        else:
+            target_formulation = int(target_formulation[0])
+        if current_formulation_file == None or re.search("classical", file.name) != None:
+            current_formulation_file = "classical"
+        else:
+            current_formulation_file = int(current_formulation_file[0])            
+        if  target_formulation == current_formulation_file:
+            list_files.append(pd.read_excel(file))
     df_results_optimized = pd.concat(list_files)
     df_results_optimized.to_excel(path_to_save, index=False)
 
