@@ -1,12 +1,14 @@
 from utils import (
     running_all_instance_choose_capacity,
     running_all_instance_with_chosen_capacity,
+    read_experiments,
 )
 from zero_formulation import build_model as classical_formulation_build_model
 from first_formulation import build_model as first_reformulation_build_model
 from second_formulation import build_model as second_reformulation_build_model
 
 if __name__ == "__main__":
+    read_experiments("src/experimentos/experimento1.yml")
     running_all_instance_choose_capacity(
         classical_formulation_build_model
     )
