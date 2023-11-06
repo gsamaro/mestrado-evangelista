@@ -2,7 +2,7 @@ import os
 from itertools import chain
 from typing import Dict, List
 import types
-
+import yaml
 import numpy as np
 import pandas as pd
 
@@ -252,3 +252,9 @@ def running_all_instance_with_chosen_capacity(
         path_to_save=Path.resolve(constants.FINAL_PATH / path_to_save),
     )
     print(f"Concluído {env_formulation}")
+
+def read_experiments(experiment_name: str):
+    with open(experiment_name,"r") as file: 
+        config = yaml.safe_load(file) 
+        for chave,valor in config["padrao"].items():
+            os.environ[chave]=str(valor)
