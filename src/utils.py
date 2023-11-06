@@ -143,17 +143,17 @@ def running_all_instance_choose_capacity(build_model) -> None:
 
 def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
     list_files = []
-    for file in Path(path_to_read).glob("*"):        
+    for file in Path(path_to_read).glob("*"):
         target_formulation = re.search("\d",path_to_save.name)
         current_formulation_file = re.search("\d", file.name.split("_")[5])
         if target_formulation == None or re.search("classical", path_to_save.name) != None:
-            target_formulation = "classical"        
+            target_formulation = "classical"
         else:
             target_formulation = int(target_formulation[0])
         if current_formulation_file == None or re.search("classical", file.name) != None:
             current_formulation_file = "classical"
         else:
-            current_formulation_file = int(current_formulation_file[0])            
+            current_formulation_file = int(current_formulation_file[0])
         if  target_formulation == current_formulation_file:
             list_files.append(pd.read_excel(file))
     df_results_optimized = pd.concat(list_files)
@@ -169,7 +169,7 @@ def solve_optimized_model(
         print_info(data, "capacidade está com tipo errado")
         raise TypeError("Capacidade está com tipo errado.")
     data = dataCS(dataset, r=nmaquinas)
-    mdl, data = build_model(data, capacity.get("capacity", 0))
+    mdl, data = build_model(data, float(os.environ.get("multiplicador_capacidade",1)) * capacity.get("capacity", 0))
     mdl.parameters.timelimit = constants.TIMELIMIT
     result = mdl.solve()
 
@@ -254,7 +254,7 @@ def running_all_instance_with_chosen_capacity(
     print(f"Concluído {env_formulation}")
 
 def read_experiments(experiment_name: str):
-    with open(experiment_name,"r") as file: 
-        config = yaml.safe_load(file) 
+    with open(experiment_name,"r") as file:
+        config = yaml.safe_load(file)
         for chave,valor in config["padrao"].items():
             os.environ[chave]=str(valor)
