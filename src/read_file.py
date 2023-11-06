@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from typing import Dict
-
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -39,9 +39,9 @@ class LerDados:
         self.cap = np.array(df.iloc[inicio:fim, 0].astype(float), dtype=int)
         inicio, fim = fim, fim + self.nitems
         self.vt = np.array(df.iloc[inicio:fim, 0].astype(float), dtype=int)
-        self.hc = np.array(df.iloc[inicio:fim, 1].astype(float), dtype=int)
+        self.hc = int(os.environ.get("custo_estoque", 1)) * np.array(df.iloc[inicio:fim, 1].astype(float), dtype=int)
         self.st = np.array(df.iloc[inicio:fim, 2].astype(float), dtype=int)
-        self.sc = np.array(df.iloc[inicio:fim, 3].astype(float), dtype=int)
+        self.sc = int(os.environ.get("custo_setup", 1)) * np.array(df.iloc[inicio:fim, 3].astype(float), dtype=int)
         inicio, fim = fim, fim + self.nperiodos
         if self.nitems <= 15:
             self.d = np.array(df.iloc[inicio:fim, :].astype(float), dtype=int).T
