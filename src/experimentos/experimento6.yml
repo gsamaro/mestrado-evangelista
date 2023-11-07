@@ -1,0 +1,4 @@
+padrao:
+  custo_estoque: 1
+  multiplicador_capacidade: 1
+  custo_setup: 0
