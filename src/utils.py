@@ -36,17 +36,19 @@ def print_info(data: dataCS, status: str) -> None:
     )
 
 
-def add_new_kpi(kpis: Dict[str, any], result, data: dataCS) -> dict:
+def add_new_kpi(kpis: Dict[str, any], result, data: dataCS, **kwargs) -> dict:
     kpis["Instance"] = data.instance
     kpis["Best Bound"] = result.solve_details.best_bound
     kpis["Gap"] = result.solve_details.gap
-    kpis["Nodes Processed"] = result.solve_details.gap
+    kpis["Nodes Processed"] = result.solve_details.nb_nodes_processed
     kpis["Tempo de Solução"] = result.solve_details.time
     kpis["capacity"] = data.cap[0]
     kpis["utilization_capacity"] = (
         100 * kpis.get("used_capacity", 0) / (data.cap[0] * data.r * data.nperiodos)
     )
     kpis["nmaquinas"] = data.r
+    for key, value in kwargs.items():
+        kpis[key] = value
     return kpis
 
 
