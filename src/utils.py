@@ -143,20 +143,21 @@ def running_all_instance_choose_capacity(build_model) -> None:
     print("Processamento de capacidades concluído.")
 
 
+def get_values_from_name(file_name: str, regex: str, index: int) -> int:
+    target = re.compile(regex).search(file_name)
+    if len(target) > 0:
+        return int(target[0][index])
+    else:
+        raise ValueError("Não encontrado formulação/experimento.")
+    
 def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
     list_files = []
-    for file in Path(path_to_read).glob("*"):
-        target_formulation = re.search("\d",path_to_save.name)
-        current_formulation_file = re.search("\d", file.name.split("_")[5])
-        if target_formulation == None or re.search("classical", path_to_save.name) != None:
-            target_formulation = "classical"
-        else:
-            target_formulation = int(target_formulation[0])
-        if current_formulation_file == None or re.search("classical", file.name) != None:
-            current_formulation_file = "classical"
-        else:
-            current_formulation_file = int(current_formulation_file[0])
-        if  target_formulation == current_formulation_file:
+    target_formulation = get_values_from_name(path_to_save.name, "otimizados_[0-9]", -1)
+    target_experiment = get_values_from_name(path_to_save, "experiment_[0-9]", -1)
+    for file in Path(path_to_read).glob("*"):        
+        current_formulation_file = get_values_from_name(file.name, "[0-9]_ref", 0)                
+        current_experiment = get_values_from_name(file.name, "experiment_[0-9]", -1)            
+        if  target_formulation == current_formulation_file and target_experiment == current_experiment:
             list_files.append(pd.read_excel(file))
     df_results_optimized = pd.concat(list_files)
     df_results_optimized.to_excel(path_to_save, index=False)
@@ -180,7 +181,7 @@ def solve_optimized_model(
         return None
 
     kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
-    kpis = add_new_kpi(kpis, result, data)
+    kpis = add_new_kpi(kpis, result, data, formulation=env_formulation, experimento=os.environ.get("experiment_id"))
 
     # Cálculo da relaxação linear
     relaxed_model = mdl.clone()
