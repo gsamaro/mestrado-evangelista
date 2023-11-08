@@ -145,7 +145,7 @@ def running_all_instance_choose_capacity(build_model) -> None:
 
 def get_values_from_name(file_name: str, regex: str, index: int) -> int:
     target = re.compile(regex).search(file_name)
-    if len(target) > 0:
+    if target:
         return int(target[0][index])
     else:
         raise ValueError("Não encontrado formulação/experimento.")
@@ -153,7 +153,7 @@ def get_values_from_name(file_name: str, regex: str, index: int) -> int:
 def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
     list_files = []
     target_formulation = get_values_from_name(path_to_save.name, "otimizados_[0-9]", -1)
-    target_experiment = get_values_from_name(path_to_save, "experiment_[0-9]", -1)
+    target_experiment = get_values_from_name(path_to_save.name, "experiment_[0-9]", -1)
     for file in Path(path_to_read).glob("*"):        
         current_formulation_file = get_values_from_name(file.name, "[0-9]_ref", 0)                
         current_experiment = get_values_from_name(file.name, "experiment_[0-9]", -1)            
@@ -190,7 +190,7 @@ def solve_optimized_model(
     relaxed_objective_value = relaxed_model.objective_value
     kpis["Relaxed Objective Value"] = relaxed_objective_value
 
-    suffix_path = str(data) + "_" + env_formulation
+    suffix_path = str(data) + "_" + env_formulation + f"_experiment_{os.environ.get('experiment_id')}"
     complete_path_to_save = Path.resolve(
         constants.OTIMIZADOS_INDIVIDUAIS_PATH / suffix_path
     )
@@ -256,7 +256,8 @@ def running_all_instance_with_chosen_capacity(
     )
     print(f"Concluído {env_formulation}")
 
-def read_experiments(experiment_name: str):
+def read_experiments(experiment_name: str, experiment_id: int):
+    os.environ["experiment_id"] = str(experiment_id)
     with open(experiment_name,"r") as file:
         config = yaml.safe_load(file)
         for chave,valor in config["padrao"].items():
