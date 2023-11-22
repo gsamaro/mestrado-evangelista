@@ -148,7 +148,7 @@ def get_values_from_name(file_name: str, regex: str, index: int) -> int:
     if target:
         return int(target[0][index])
     else:
-        raise ValueError("Não encontrado formulação/experimento.")
+        return -1        
     
 def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
     list_files = []
