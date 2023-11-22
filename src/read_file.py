@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from context import ProjectContext
 
 
 @dataclass
@@ -19,7 +20,7 @@ class LerDados:
     sc: np.ndarray
     d: np.ndarray
 
-    def __init__(self, instance: str):
+    def __init__(self, context: ProjectContext, instance: str):
         self.instance = instance
         self._instance = Path.resolve(Path.cwd() / "data" / instance)
         sep = self._detect_delimiter()
@@ -39,9 +40,9 @@ class LerDados:
         self.cap = np.array(df.iloc[inicio:fim, 0].astype(float), dtype=int)
         inicio, fim = fim, fim + self.nitems
         self.vt = np.array(df.iloc[inicio:fim, 0].astype(float), dtype=int)
-        self.hc = int(os.environ.get("custo_estoque", 1)) * np.array(df.iloc[inicio:fim, 1].astype(float), dtype=int)
+        self.hc = context.custo_estoque * np.array(df.iloc[inicio:fim, 1].astype(float), dtype=int)
         self.st = np.array(df.iloc[inicio:fim, 2].astype(float), dtype=int)
-        self.sc = int(os.environ.get("custo_setup", 1)) * np.array(df.iloc[inicio:fim, 3].astype(float), dtype=int)
+        self.sc = context.custo_setup * np.array(df.iloc[inicio:fim, 3].astype(float), dtype=int)
         inicio, fim = fim, fim + self.nperiodos
         if self.nitems <= 15:
             self.d = np.array(df.iloc[inicio:fim, :].astype(float), dtype=int).T
@@ -86,8 +87,8 @@ class dataCS(LerDados):
     cs: Dict
     r: int
 
-    def __init__(self, instance: str, r: int, original_capacity: bool = False):
-        super().__init__(instance)
+    def __init__(self, context: ProjectContext, instance: str, r: int, original_capacity: bool = False):
+        super().__init__(context, instance)
         self._create_vc_cs()
         self.r = r
         if not original_capacity:
