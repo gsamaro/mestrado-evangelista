@@ -172,6 +172,7 @@ def solve_optimized_model(
     data = dataCS(context, dataset, r=nmaquinas)
     mdl, data = build_model(data, context.multiplicador_capacidade * capacity.get("capacity", 0))
     mdl.parameters.timelimit = constants.TIMELIMIT
+    mdl.set_time_limit(constants.TIMELIMIT)
     result = mdl.solve()
 
     if result == None:
