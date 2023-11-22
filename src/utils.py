@@ -10,6 +10,7 @@ import re
 
 from pathlib import Path
 from read_file import dataCS
+from context import ProjectContext
 
 try:
     from mpi4py.futures import MPIPoolExecutor
@@ -25,14 +26,14 @@ import constants
 import gc
 
 
-def print_info(data: dataCS, status: str) -> None:
+def print_info(context: ProjectContext, data: dataCS, status: str) -> None:
     if MPI_BOOL:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
     else:
         rank = None
     print(
-        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Process {rank}"
+        f"Instance = {data.instance} Cap = {data.cap[0]} nmaquinas = {data.r} {status} Experimento {context.experiment_id}"
     )
 
 
@@ -63,12 +64,13 @@ def closest_to_IDEAL_CAPACITY_percent(
 
 
 def choose_capacity(
+    context: ProjectContext,
     dataset: str,
     build_model,
     nmaquinas: int = 2,
     get_closest: bool = True,
 ) -> None:
-    data = dataCS(dataset, r=nmaquinas)
+    data = dataCS(context, dataset, r=nmaquinas)
     original_capacity = data.cap[0] / data.r
     instance_results = []
 
@@ -83,7 +85,7 @@ def choose_capacity(
         result = mdl.solve()
 
         if result == None:
-            print_info(data, "infactível")
+            print_info(context, data, "infactível")
             continue
 
         kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
@@ -92,7 +94,7 @@ def choose_capacity(
         assert kpis["utilization_capacity"] <= 100, "Capacidade > 100%"
 
         instance_results.append(kpis)
-        print_info(data, "concluído")
+        print_info(context, data, "concluído")
     if get_closest:
         if len(instance_results) > 0:
             df_ideal_capacity = pd.DataFrame(
@@ -112,14 +114,14 @@ def choose_capacity(
     gc.collect()
 
 
-def running_all_instance_choose_capacity(build_model) -> None:
+def running_all_instance_choose_capacity(context: ProjectContext, build_model) -> None:
     # Executando e coletando os resultados
     final_results = []
 
     if not MPI_BOOL:
         for dataset in constants.INSTANCES:
             for nmaq in constants.MAQUINAS:
-                best_result = choose_capacity(dataset, build_model, nmaquinas=nmaq)
+                best_result = choose_capacity(context, dataset, build_model, nmaquinas=nmaq)
 
                 if isinstance(best_result, pd.DataFrame):
                     final_results.append(best_result)
@@ -128,7 +130,7 @@ def running_all_instance_choose_capacity(build_model) -> None:
             futures = executor.starmap(
                 choose_capacity,
                 (
-                    (dataset, build_model, nmaq)
+                    (context, dataset, build_model, nmaq)
                     for dataset in constants.INSTANCES
                     for nmaq in constants.MAQUINAS
                 ),
@@ -164,24 +166,24 @@ def get_and_save_results(path_to_read: str, path_to_save: Path) -> None:
 
 
 def solve_optimized_model(
-    dataset: str, build_model, capacity: Dict, env_formulation: int, nmaquinas: int = 8
+    context: ProjectContext, dataset: str, build_model, capacity: Dict, env_formulation: int, nmaquinas: int = 8
 ) -> None:
     if capacity == None:
         return None
     elif not isinstance(capacity, dict):
-        print_info(data, "capacidade está com tipo errado")
+        print_info(context, data, "capacidade está com tipo errado")
         raise TypeError("Capacidade está com tipo errado.")
-    data = dataCS(dataset, r=nmaquinas)
-    mdl, data = build_model(data, float(os.environ.get("multiplicador_capacidade",1)) * capacity.get("capacity", 0))
+    data = dataCS(context, dataset, r=nmaquinas)
+    mdl, data = build_model(data, context.multiplicador_capacidade * capacity.get("capacity", 0))
     mdl.parameters.timelimit = constants.TIMELIMIT
     result = mdl.solve()
 
     if result == None:
-        print_info(data, "infactível")
+        print_info(context, data, "infactível")
         return None
 
     kpis = mdl.kpis_as_dict(result, objective_key="objective_function")
-    kpis = add_new_kpi(kpis, result, data, formulation=env_formulation, experimento=os.environ.get("experiment_id"))
+    kpis = add_new_kpi(kpis, result, data, formulation=env_formulation, experimento=context.experiment_id)
 
     # Cálculo da relaxação linear
     relaxed_model = mdl.clone()
@@ -190,7 +192,7 @@ def solve_optimized_model(
     relaxed_objective_value = relaxed_model.objective_value
     kpis["Relaxed Objective Value"] = relaxed_objective_value
 
-    suffix_path = str(data) + "_" + env_formulation + f"_experiment_{os.environ.get('experiment_id')}"
+    suffix_path = str(data) + "_" + env_formulation + f"_experiment_{context.experiment_id}"
     complete_path_to_save = Path.resolve(
         constants.OTIMIZADOS_INDIVIDUAIS_PATH / suffix_path
     )
@@ -198,12 +200,12 @@ def solve_optimized_model(
     df_results_optimized = pd.DataFrame([kpis])
     df_results_optimized.to_excel(f"{complete_path_to_save}.xlsx", index=False)
 
-    print_info(data, "concluído")
+    print_info(context, data, "concluído")
     gc.collect()
 
 
 def running_all_instance_with_chosen_capacity(
-    build_model, path_to_save: str, env_formulation: int
+    context: ProjectContext, build_model, path_to_save: str, env_formulation: int
 ):
     final_results = []
 
@@ -222,6 +224,7 @@ def running_all_instance_with_chosen_capacity(
                     cap = caps.get((dataset, nmaq), None)
 
                 best_result = solve_optimized_model(
+                    context,
                     dataset,
                     build_model,
                     capacity=cap,
@@ -237,6 +240,7 @@ def running_all_instance_with_chosen_capacity(
                 solve_optimized_model,
                 (
                     (
+                        context,
                         dataset,
                         build_model,
                         caps.get((dataset, nmaq), None),
@@ -255,10 +259,3 @@ def running_all_instance_with_chosen_capacity(
         path_to_save=Path.resolve(constants.FINAL_PATH / path_to_save),
     )
     print(f"Concluído {env_formulation}")
-
-def read_experiments(experiment_name: str, experiment_id: int):
-    os.environ["experiment_id"] = str(experiment_id)
-    with open(experiment_name,"r") as file:
-        config = yaml.safe_load(file)
-        for chave,valor in config["padrao"].items():
-            os.environ[chave]=str(valor)
